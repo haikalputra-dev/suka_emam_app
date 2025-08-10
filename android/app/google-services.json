@@ -1,0 +1,83 @@
+{
+  "project_info": {
+    "project_number": "348690524507",
+    "firebase_url": "https://sukaemam-23-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "sukaemam-23",
+    "storage_bucket": "sukaemam-23.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:348690524507:android:51643cb860ee6c8b57127e",
+        "android_client_info": {
+          "package_name": "com.example.suka_emam_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "348690524507-07i17bi7bfrcbk81hte8narsoomacfoe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzNyXh9JHJJE8Qwj4p4rL3xzg6d_qXXvU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "348690524507-07i17bi7bfrcbk81hte8narsoomacfoe.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "348690524507-flsaspobdm7pmk8pj71m35h85c2jnm8u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.sukaEmamApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:348690524507:android:813217e33ac11c8957127e",
+        "android_client_info": {
+          "package_name": "com.sukaemam.pandora"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "348690524507-07i17bi7bfrcbk81hte8narsoomacfoe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzNyXh9JHJJE8Qwj4p4rL3xzg6d_qXXvU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "348690524507-07i17bi7bfrcbk81hte8narsoomacfoe.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "348690524507-flsaspobdm7pmk8pj71m35h85c2jnm8u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.sukaEmamApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
