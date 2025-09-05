@@ -20,11 +20,25 @@ class AuthService {
   // --- Google ---
   Future<void> signInWithGoogle() async {
     // Mulai flow sign-in interaktif
-    final user = await GoogleSignIn.instance.authenticate(); // returns GoogleSignInAccount
-    // Ambil token untuk Firebase
-    final tokens = await user.authentication; // v7: cuma ada idToken
-    final credential = GoogleAuthProvider.credential(idToken: tokens.idToken);
-    await _auth.signInWithCredential(credential);
+    final googleUser = await GoogleSignIn.instance.authenticate();
+
+    // --- BAGIAN PENTING: CEK JIKA USER MEMBATALKAN ---
+    if (googleUser == null) {
+      // User membatalkan proses login, jangan lanjutkan.
+      print('Google sign in dibatalkan oleh user.');
+      // Lempar error agar bisa ditangkap di UI jika perlu
+      throw Exception('Proses login dibatalkan');
+    }
+    // --------------------------------------------------
+
+  // Ambil token untuk Firebase
+  final googleAuth = await googleUser.authentication;
+  final credential = GoogleAuthProvider.credential(
+    idToken: googleAuth.idToken,
+  );
+
+  // Masuk ke Firebase dengan kredensial Google
+  await _auth.signInWithCredential(credential);
   }
 
 }

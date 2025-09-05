@@ -41,55 +41,51 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDKFlPUWGqqo7FHoWP1SNK9HHhil1ZLRTc',
-    appId: '1:348690524507:web:ac97f876342aa10357127e',
-    messagingSenderId: '348690524507',
-    projectId: 'sukaemam-23',
-    authDomain: 'sukaemam-23.firebaseapp.com',
-    databaseURL: 'https://sukaemam-23-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'sukaemam-23.firebasestorage.app',
-    measurementId: 'G-SSVFTJ4QQF',
+    apiKey: 'AIzaSyC6rRCW8KuHXlWHo8nvtz1oHbuwuWigZoo',
+    appId: '1:228865824711:web:43120b0e5ecbdae1006be2',
+    messagingSenderId: '228865824711',
+    projectId: 'sukaemam-final-test',
+    authDomain: 'sukaemam-final-test.firebaseapp.com',
+    storageBucket: 'sukaemam-final-test.firebasestorage.app',
+    measurementId: 'G-VS3XLV1G7T',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCzNyXh9JHJJE8Qwj4p4rL3xzg6d_qXXvU',
-    appId: '1:348690524507:android:51643cb860ee6c8b57127e',
-    messagingSenderId: '348690524507',
-    projectId: 'sukaemam-23',
-    databaseURL: 'https://sukaemam-23-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'sukaemam-23.firebasestorage.app',
+    apiKey: 'AIzaSyDQcdfLQ0RFydUYwMvFMqCJFDalHeeS7hE',
+    appId: '1:228865824711:android:6282e8ccdc4062b8006be2',
+    messagingSenderId: '228865824711',
+    projectId: 'sukaemam-final-test',
+    storageBucket: 'sukaemam-final-test.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAtriJb-7scYVyxjKxZ4K7k-ZPFxBV_3Gc',
-    appId: '1:348690524507:ios:00532d5101029b2057127e',
-    messagingSenderId: '348690524507',
-    projectId: 'sukaemam-23',
-    databaseURL: 'https://sukaemam-23-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'sukaemam-23.firebasestorage.app',
-    iosClientId: '348690524507-flsaspobdm7pmk8pj71m35h85c2jnm8u.apps.googleusercontent.com',
+    apiKey: 'AIzaSyAXHX3b3P1_BIrFwiZyTLN4H8QN5LFvrg0',
+    appId: '1:228865824711:ios:06ecd83f09106042006be2',
+    messagingSenderId: '228865824711',
+    projectId: 'sukaemam-final-test',
+    storageBucket: 'sukaemam-final-test.firebasestorage.app',
+    iosClientId: '228865824711-vg0cmm4kad0igibnlmcf0md0p4bqamd9.apps.googleusercontent.com',
     iosBundleId: 'com.example.sukaEmamApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAtriJb-7scYVyxjKxZ4K7k-ZPFxBV_3Gc',
-    appId: '1:348690524507:ios:00532d5101029b2057127e',
-    messagingSenderId: '348690524507',
-    projectId: 'sukaemam-23',
-    databaseURL: 'https://sukaemam-23-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'sukaemam-23.firebasestorage.app',
-    iosClientId: '348690524507-flsaspobdm7pmk8pj71m35h85c2jnm8u.apps.googleusercontent.com',
+    apiKey: 'AIzaSyAXHX3b3P1_BIrFwiZyTLN4H8QN5LFvrg0',
+    appId: '1:228865824711:ios:06ecd83f09106042006be2',
+    messagingSenderId: '228865824711',
+    projectId: 'sukaemam-final-test',
+    storageBucket: 'sukaemam-final-test.firebasestorage.app',
+    iosClientId: '228865824711-vg0cmm4kad0igibnlmcf0md0p4bqamd9.apps.googleusercontent.com',
     iosBundleId: 'com.example.sukaEmamApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDKFlPUWGqqo7FHoWP1SNK9HHhil1ZLRTc',
-    appId: '1:348690524507:web:923a0a339695131357127e',
-    messagingSenderId: '348690524507',
-    projectId: 'sukaemam-23',
-    authDomain: 'sukaemam-23.firebaseapp.com',
-    databaseURL: 'https://sukaemam-23-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'sukaemam-23.firebasestorage.app',
-    measurementId: 'G-WZVHBGTGZ5',
+    apiKey: 'AIzaSyC6rRCW8KuHXlWHo8nvtz1oHbuwuWigZoo',
+    appId: '1:228865824711:web:00190f0c356ff108006be2',
+    messagingSenderId: '228865824711',
+    projectId: 'sukaemam-final-test',
+    authDomain: 'sukaemam-final-test.firebaseapp.com',
+    storageBucket: 'sukaemam-final-test.firebasestorage.app',
+    measurementId: 'G-2J64HPKFG0',
   );
+
 }

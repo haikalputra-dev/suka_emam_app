@@ -1,74 +1,37 @@
 {
   "project_info": {
-    "project_number": "348690524507",
-    "firebase_url": "https://sukaemam-23-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "sukaemam-23",
-    "storage_bucket": "sukaemam-23.firebasestorage.app"
+    "project_number": "228865824711",
+    "project_id": "sukaemam-final-test",
+    "storage_bucket": "sukaemam-final-test.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:348690524507:android:51643cb860ee6c8b57127e",
-        "android_client_info": {
-          "package_name": "com.example.suka_emam_app"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "348690524507-07i17bi7bfrcbk81hte8narsoomacfoe.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCzNyXh9JHJJE8Qwj4p4rL3xzg6d_qXXvU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "348690524507-07i17bi7bfrcbk81hte8narsoomacfoe.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "348690524507-flsaspobdm7pmk8pj71m35h85c2jnm8u.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.sukaEmamApp"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:348690524507:android:813217e33ac11c8957127e",
+        "mobilesdk_app_id": "1:228865824711:android:6282e8ccdc4062b8006be2",
         "android_client_info": {
           "package_name": "com.sukaemam.pandora"
         }
       },
       "oauth_client": [
         {
-          "client_id": "348690524507-07i17bi7bfrcbk81hte8narsoomacfoe.apps.googleusercontent.com",
+          "client_id": "228865824711-7otj0c7chtq7iaf2dhl4cfqh2ugs4jci.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCzNyXh9JHJJE8Qwj4p4rL3xzg6d_qXXvU"
+          "current_key": "AIzaSyDQcdfLQ0RFydUYwMvFMqCJFDalHeeS7hE"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "348690524507-07i17bi7bfrcbk81hte8narsoomacfoe.apps.googleusercontent.com",
+              "client_id": "228865824711-7otj0c7chtq7iaf2dhl4cfqh2ugs4jci.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "348690524507-flsaspobdm7pmk8pj71m35h85c2jnm8u.apps.googleusercontent.com",
+              "client_id": "228865824711-vg0cmm4kad0igibnlmcf0md0p4bqamd9.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.example.sukaEmamApp"

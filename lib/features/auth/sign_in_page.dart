@@ -82,7 +82,7 @@ class _SignInPageState extends State<SignInPage> {
                     TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(hintText: 'haikal@sukaemam.co.id'),
+                      decoration: const InputDecoration(hintText: 'sukaemam@example.co.id'),
                       validator: (v) => (v == null || !v.contains('@')) ? 'Masukkan email valid' : null,
                     ),
                     const SizedBox(height: 12),
@@ -140,19 +140,7 @@ class _SignInPageState extends State<SignInPage> {
                     Center(
                       child: 
                         InkWell(
-                          onTap: _loading ? null : () async {
-                            setState(() => _loading = true);
-                            try {
-                              await AuthService().signInWithGoogle();
-                              // AuthGate akan auto-redirect ke Home
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Google sign-in failed: $e')),
-                              );
-                            } finally {
-                              if (mounted) setState(() => _loading = false);
-                            }
-                          },
+                          onTap: _loading ? null : _doGoogle,
                           borderRadius: BorderRadius.circular(28),
                           child: Container(
                             width: 56,

@@ -9,7 +9,9 @@ import 'features/main/main_page.dart';
 
 /// GANTI dengan Web Client ID dari Firebase (oauth client_type = 3 di google-services.json)
 const String kWebClientId =
-    '348690524507-07i17bi7bfrcbk81hte8narsoomacfoe.apps.googleusercontent.com';
+
+    '228865824711-7otj0c7chtq7iaf2dhl4cfqh2ugs4jci.apps.googleusercontent.com';
+    // "228865824711-j12egudj0ud5dnlreeb88jgrdqc4lnut.apps.googleusercontent.com";
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

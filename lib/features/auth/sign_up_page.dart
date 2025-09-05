@@ -70,14 +70,14 @@ class _SignUpPageState extends State<SignUpPage> {
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: _name,
-                      decoration: const InputDecoration(hintText: 'Haikal Putra'),
+                      decoration: const InputDecoration(hintText: 'Nama'),
                       validator: (v) => (v == null || v.trim().isEmpty) ? 'Nama wajib diisi' : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(hintText: 'haikal@sukaemam.co.id'),
+                      decoration: const InputDecoration(hintText: 'sukaemam@example.co.id'),
                       validator: (v) => (v == null || !v.contains('@')) ? 'Masukkan email valid' : null,
                     ),
                     const SizedBox(height: 12),

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:suka_emam_app/features/restaurants/views/home_page.dart';
 import 'package:suka_emam_app/features/scan/scan_page.dart';
+import 'package:suka_emam_app/features/profile/profile_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -17,7 +18,7 @@ class _MainPageState extends State<MainPage> {
   static const List<Widget> _pages = <Widget>[
     HomePage(),
     Placeholder(child: Center(child: Text('Scan Page'))), // Ini akan jadi halaman Scan
-    Placeholder(child: Center(child: Text('Profile Page'))),
+    ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
