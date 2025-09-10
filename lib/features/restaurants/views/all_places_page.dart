@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:suka_emam_app/features/restaurants/models/restaurant.dart';
-import 'package:suka_emam_app/features/restaurants/services/mock_restaurant_service.dart';
-import 'package:suka_emam_app/features/restaurants/widgets/location_filter_sheet.dart'; // <-- IMPORT WIDGET BARU
+import 'package:suka_emam_app/features/restaurants/services/restaurant_service.dart'; // <-- UBAH: Hanya impor service asli
+import 'package:suka_emam_app/features/restaurants/widgets/location_filter_sheet.dart';
 import 'package:suka_emam_app/features/restaurants/widgets/restaurant_grid_card.dart';
 
 class PredefinedLocation {
@@ -23,11 +23,13 @@ class AllPlacesPage extends StatefulWidget {
 }
 
 class _AllPlacesPageState extends State<AllPlacesPage> {
-  final MockRestaurantService _restaurantService = MockRestaurantService();
+  // <-- UBAH: Gunakan RestaurantService yang asli
+  final RestaurantService _restaurantService = RestaurantService();
   
   List<Restaurant> _allRestaurants = [];
   List<Restaurant> _filteredRestaurants = [];
   bool _isLoading = true;
+  String _errorMessage = ''; // Untuk menyimpan pesan error jika ada
 
   final List<PredefinedLocation> _locations = [
     PredefinedLocation(name: 'Alun-alun Kota', latitude: -6.921832, longitude: 106.934211),
@@ -44,18 +46,37 @@ class _AllPlacesPageState extends State<AllPlacesPage> {
     _fetchAndFilterRestaurants();
   }
 
+  // <-- UBAH: Tambahkan blok try-catch untuk penanganan eror
   Future<void> _fetchAndFilterRestaurants() async {
-    setState(() => _isLoading = true);
-    if (_allRestaurants.isEmpty) {
-      _allRestaurants = await _restaurantService.getAllRestaurants();
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      if (_allRestaurants.isEmpty) {
+        // Panggil method dari service asli (pastikan nama methodnya `getRestaurants`)
+        _allRestaurants = await _restaurantService.getRestaurants();
+      }
+      _applyFilter();
+    } catch (e) {
+      // Jika terjadi eror saat fetch data
+      setState(() {
+        _errorMessage = 'Gagal memuat data. Periksa koneksi internet Anda.';
+      });
+      print('Error fetching restaurants: $e');
+    } finally {
+      // Pastikan loading state selalu false di akhir
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    _applyFilter();
-    setState(() => _isLoading = false);
   }
 
   void _applyFilter() {
     List<Restaurant> tempResult = [];
     for (var restaurant in _allRestaurants) {
+      // Pastikan model Restaurant Anda memiliki properti latitude dan longitude
       final distanceInMeters = Geolocator.distanceBetween(
         _selectedLocation.latitude, _selectedLocation.longitude,
         restaurant.latitude, restaurant.longitude,
@@ -67,16 +88,14 @@ class _AllPlacesPageState extends State<AllPlacesPage> {
     setState(() => _filteredRestaurants = tempResult);
   }
 
-  // --- FUNGSI BARU UNTUK MENAMPILKAN BOTTOM SHEET ---
   void _showLocationFilterSheet() async {
     final selected = await showModalBottomSheet<PredefinedLocation>(
       context: context,
-      isScrollControlled: true, // Agar bisa set tinggi
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        // Tampilkan 80% dari tinggi layar
         return SizedBox(
           height: MediaQuery.of(context).size.height * 0.8,
           child: LocationFilterSheet(
@@ -87,7 +106,6 @@ class _AllPlacesPageState extends State<AllPlacesPage> {
       },
     );
 
-    // Jika user memilih lokasi baru, update state dan filter ulang
     if (selected != null) {
       setState(() {
         _selectedLocation = selected;
@@ -103,12 +121,11 @@ class _AllPlacesPageState extends State<AllPlacesPage> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // --- UI FILTER YANG SUDAH DIUPDATE ---
           Card(
             elevation: 2,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: InkWell(
-              onTap: _showLocationFilterSheet, // Panggil bottom sheet
+              onTap: _showLocationFilterSheet,
               borderRadius: BorderRadius.circular(12),
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
@@ -146,29 +163,38 @@ class _AllPlacesPageState extends State<AllPlacesPage> {
             ],
           ),
           const Divider(height: 32),
-          // --- HASIL PENCARIAN (Kodenya sama seperti sebelumnya) ---
           Text('Ditemukan ${_filteredRestaurants.length} tempat', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _filteredRestaurants.isEmpty
-                  ? const Center(child: Padding(padding: EdgeInsets.all(32.0), child: Text('Tidak ada restoran ditemukan dalam radius ini.')))
-               :GridView.builder(
-                  shrinkWrap: true, // Wajib di dalam ListView
-                  physics: const NeverScrollableScrollPhysics(), // Wajib di dalam ListView
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // 2 kolom
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.8, // Rasio lebar:tinggi kartu
-                  ),
-                  itemCount: _filteredRestaurants.length,
-                  itemBuilder: (context, index) {
-                    return RestaurantGridCard(restaurant: _filteredRestaurants[index]);
-                  },
-                ),
+          _buildRestaurantGrid(), // Panggil method untuk build konten
         ],
       ),
+    );
+  }
+
+  // Widget helper untuk merapikan bagian body
+  Widget _buildRestaurantGrid() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorMessage.isNotEmpty) {
+      return Center(child: Padding(padding: const EdgeInsets.all(32.0), child: Text(_errorMessage)));
+    }
+    if (_filteredRestaurants.isEmpty) {
+      return const Center(child: Padding(padding: EdgeInsets.all(32.0), child: Text('Tidak ada restoran ditemukan dalam radius ini.')));
+    }
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.8,
+      ),
+      itemCount: _filteredRestaurants.length,
+      itemBuilder: (context, index) {
+        return RestaurantGridCard(restaurant: _filteredRestaurants[index]);
+      },
     );
   }
 }

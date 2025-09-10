@@ -41,6 +41,13 @@ class _SignInPageState extends State<SignInPage> {
     setState(() => _loading = true);
     try {
       await _svc.signInWithGoogle();
+            final user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              final idToken = await user.getIdToken();
+              print('--- FIREBASE ID TOKEN ---');
+              print(idToken); // Token akan muncul di Debug Console
+              print('--- END TOKEN ---');
+            }
       _toast('Signed in with Google', color: Colors.green);
       // TODO: navigate to Home
     } catch (e) {

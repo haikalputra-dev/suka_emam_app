@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "228865824711-j12egudj0ud5dnlreeb88jgrdqc4lnut.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sukaemam.pandora",
+            "certificate_hash": "f4baac454e7790d346d177f38859ef359f863f8a"
+          }
+        },
+        {
           "client_id": "228865824711-7otj0c7chtq7iaf2dhl4cfqh2ugs4jci.apps.googleusercontent.com",
           "client_type": 3
         }

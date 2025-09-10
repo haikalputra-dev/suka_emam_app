@@ -6,15 +6,15 @@ class DioClient {
   static final Dio _dio = Dio(
     BaseOptions(
       baseUrl: kApiBaseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20),
-      sendTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 50),
+      sendTimeout: const Duration(seconds: 30),
       headers: {'Accept': 'application/json'},
     ),
   )..interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+          final token = await FirebaseAuth.instance.currentUser?.getIdToken(true);
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -25,7 +25,7 @@ class DioClient {
 
   static Dio get i => _dio;
 
-    Future<Response<dynamic>> checkin({
+   static Future<Response<dynamic>> checkin({
       required String qr,
       required double lat,
       required double lng,

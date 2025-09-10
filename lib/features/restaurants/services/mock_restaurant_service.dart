@@ -7,9 +7,7 @@ class MockRestaurantService {
     Restaurant(
       id: 1,
       name: 'Mie Goreng Mang Roy',
-      categories: ['Mie', 'Jajanan', 'Kaki Lima'],
       shortAddress: 'Alun Alun Sukabumi',
-      fullAddress: 'Jl. Alun-Alun Utara No. 1, Sukabumi',
       description:
           'Mie goreng legendaris dengan bumbu khas yang bikin nagih. Porsi melimpah, harga bersahabat.',
       rating: 4.5,
@@ -26,9 +24,7 @@ class MockRestaurantService {
     Restaurant(
       id: 2,
       name: 'Warteg Bahari',
-      categories: ['Nasi', 'Ayam', 'Minuman'],
       shortAddress: 'Benteng, Sukabumi',
-      fullAddress: 'Jl. Benteng No. 45, Warudoyong, Sukabumi',
       description:
           'Murah banget bang, ceban paket kenyang. Pilihan lauknya banyak dan rasanya otentik.',
       rating: 4.4,
@@ -46,9 +42,7 @@ class MockRestaurantService {
     Restaurant(
       id: 3,
       name: 'Soto Ayam Asli Lamongan',
-      categories: ['Soto', 'Ayam', 'Berkuah'],
       shortAddress: 'Ciaul, Sukabumi',
-      fullAddress: 'Jl. R.A. Kosasih No. 101, Ciaul, Sukabumi',
       description:
           'Soto ayam dengan kuah kuning medok dan koya gurih. Paling pas disantap saat cuaca dingin.',
       rating: 4.8,
@@ -66,9 +60,7 @@ class MockRestaurantService {
     Restaurant(
       id: 4,
       name: 'Kopi Anjis Sukabumi',
-      categories: ['Kopi', 'Kafe', 'Nongkrong'],
       shortAddress: 'Cikole, Sukabumi',
-      fullAddress: 'Jl. Siliwangi No. 75, Cikole, Sukabumi',
       description: 'Tempat ngopi hits dengan suasana cozy dan pilihan biji kopi nusantara. Cocok buat kerja atau sekedar santai.',
       rating: 4.7,
       reviewCount: 250,
@@ -84,9 +76,7 @@ class MockRestaurantService {
      Restaurant(
       id: 5,
       name: 'Saung Ranggon',
-      categories: ['Sunda', 'Keluarga', 'Lesehan'],
       shortAddress: 'Salabintana, Sukabumi',
-      fullAddress: 'Jl. Salabintana KM 7, Sudajaya Girang, Sukabumi',
       description: 'Nikmati masakan khas Sunda di saung-saung bambu dengan pemandangan alam yang asri. Menu andalan: Nasi Liwet Komplit.',
       rating: 4.6,
       reviewCount: 188,
@@ -102,9 +92,7 @@ class MockRestaurantService {
     Restaurant(
       id: 6,
       name: 'Mochi Kaswari Lampion',
-      categories: ['Oleh-oleh', 'Kue', 'Jajanan'],
       shortAddress: 'Bhayangkara, Sukabumi',
-      fullAddress: 'Jl. Bhayangkara Gg. Kaswari, Selabatu, Sukabumi',
       description: 'Pusat oleh-oleh khas Sukabumi. Mochi dengan isian legit dan beragam rasa yang legendaris.',
       rating: 4.9,
       reviewCount: 530,

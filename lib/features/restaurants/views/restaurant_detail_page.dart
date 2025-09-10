@@ -33,6 +33,10 @@ class RestaurantDetailPage extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
+  print('--- RENDERING DETAIL PAGE ---');
+  print('URL DITERIMA WIDGET: "${restaurant.mainImageUrl}"');
+  print('-----------------------------');
+
     return Scaffold(
       // Kita tidak pakai AppBar di sini agar bisa membuat AppBar custom di atas gambar
       body: Stack(
@@ -69,13 +73,6 @@ class RestaurantDetailPage extends StatelessWidget {
                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-
-                    // Kategori (pakai Text biasa, bukan Chip)
-                    Text(
-                      restaurant.categories.join(' • '),
-                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                    ),
-                    const SizedBox(height: 16),
                     
                     // Info Lokasi & Rating
                     Row(

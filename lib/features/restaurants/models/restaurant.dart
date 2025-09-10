@@ -3,9 +3,7 @@
 class Restaurant {
   final int id;
   final String name;
-  final List<String> categories;
   final String shortAddress;
-  final String fullAddress;
   final String description;
   final double rating;
   final int reviewCount;
@@ -19,9 +17,7 @@ class Restaurant {
   Restaurant({
     required this.id,
     required this.name,
-    required this.categories,
     required this.shortAddress,
-    required this.fullAddress,
     required this.description,
     required this.rating,
     required this.reviewCount,
@@ -36,21 +32,28 @@ class Restaurant {
   // Factory constructor untuk membuat instance Restaurant dari JSON
   // Ini akan sangat berguna saat kita konek ke API asli
   factory Restaurant.fromJson(Map<String, dynamic> json) {
+      // Sediakan nilai default jika data null atau tidak ada
+    final List<dynamic> galleryImagesData = json['galleryImageUrls'] ?? [];
+    final Map<String, dynamic> locationData = json['location'] ?? {};
+
+    final imageUrl = (json['mainImageUrl'] as String?)?.trim();
+   
     return Restaurant(
       id: json['id'],
-      name: json['name'],
-      categories: List<String>.from(json['categories']),
-      shortAddress: json['short_address'],
-      fullAddress: json['full_address'],
-      description: json['description'],
+      name: json['name'] ?? 'Nama Tidak Tersedia',
+      shortAddress: json['short_address'] ?? 'Alamat Tidak Tersedia',
+      description: json['description'] ?? '-',
       rating: (json['rating'] as num).toDouble(),
-      reviewCount: json['review_count'],
-      priceInfo: json['price_info'],
-      mainImageUrl: json['main_image_url'],
-      galleryImageUrls: List<String>.from(json['gallery_image_urls']),
+      reviewCount: json['review_count'] ?? 0,
+      priceInfo: json['price_info'] ?? '-',
+      mainImageUrl: (imageUrl == null || imageUrl.isEmpty)
+        ? 'https://placehold.co/300x200?text=No%20Image\nAvailable'
+        : imageUrl,
+      // galleryImageUrls: List<String>.from(json['gallery_image_urls'] ?? []),
+      galleryImageUrls: List<String>.from(galleryImagesData),
       isRecommended: json['is_recommended'] ?? false,
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
+      latitude: (locationData['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (locationData['longitude'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

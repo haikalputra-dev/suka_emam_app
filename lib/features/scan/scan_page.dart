@@ -14,10 +14,9 @@ class _ScanPageState extends State<ScanPage> {
   bool _busy = false;
   String? _banner;
 
-  // Controller terbaru: ValueNotifier<MobileScannerState>
   final MobileScannerController _controller = MobileScannerController(
     formats: [BarcodeFormat.qrCode],
-    detectionSpeed: DetectionSpeed.noDuplicates, // cegah spam callback
+    detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
     returnImage: false,
   );
@@ -42,7 +41,6 @@ class _ScanPageState extends State<ScanPage> {
       throw 'Izin lokasi ditolak.';
     }
 
-    // ambil lokasi akurat; timeLimit biar ga ngegantung
     return Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
       timeLimit: const Duration(seconds: 12),
@@ -57,22 +55,17 @@ class _ScanPageState extends State<ScanPage> {
     });
 
     try {
-      // stop camera sementara supaya gak detect berulang-ulang
       await _controller.stop();
-
-      // ambil lokasi sekarang
       final pos = await _getPosition();
 
-      // kirim ke server — penting: lat/lng/accuracy disertakan
-      final res = await DioClient.i.post(
-        '/checkin',
-        data: {
-          'qr': qr,
-          'lat': pos.latitude,
-          'lng': pos.longitude,
-          'accuracy': pos.accuracy, // meter
-        },
+      // --- MENGGUNAKAN METHOD DIO CLIENT YANG SUDAH RAPI ---
+      final res = await DioClient.checkin(
+        qr: qr,
+        lat: pos.latitude,
+        lng: pos.longitude,
+        accuracy: pos.accuracy,
       );
+      // ----------------------------------------------------
 
       final data = res.data as Map;
       final pts = data['points_earned'] ?? data['points'] ?? 0;
@@ -83,7 +76,6 @@ class _ScanPageState extends State<ScanPage> {
       if (!mounted) return;
       setState(() => _banner = 'Check-in sukses! +$pts pts (∑ $total) • ~${dist}m/≤${radius}m');
 
-      // kasih dialog kecil, lalu close page
       await showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -95,20 +87,20 @@ class _ScanPageState extends State<ScanPage> {
       if (!mounted) return;
       Navigator.of(context).pop(); // balik ke halaman sebelumnya
     } on DioException catch (e) {
+      print('DIO ERROR STATUS CODE: ${e.response?.statusCode}');
+      print('DIO RESPONSE BODY: ${e.response?.data}');
       String msg = 'Gagal check-in';
       final r = e.response;
       if (r != null) {
         final body = r.data;
         if (body is Map && body['errors'] is Map) {
           final errs = body['errors'] as Map;
-          // prioritas error dari server
           for (final key in ['limit', 'location', 'qr', 'auth']) {
             if (errs[key] is List && (errs[key] as List).isNotEmpty) {
               msg = (errs[key] as List).first.toString();
               break;
             }
           }
-          // fallback: ambil error pertama yang ada
           if (msg == 'Gagal check-in' && errs.isNotEmpty) {
             final first = (errs.values.first as List).first;
             msg = first.toString();
@@ -122,21 +114,18 @@ class _ScanPageState extends State<ScanPage> {
 
       if (!mounted) return;
       setState(() => _banner = 'Gagal: $msg');
-      // nyalain kamera lagi supaya user bisa coba ulang
       await _controller.start();
     } catch (e) {
       if (!mounted) return;
       setState(() => _banner = 'Gagal: $e');
       await _controller.start();
     } finally {
-      // biar banner kebaca sebentar
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  // tombol simulasi check-in (buat ngetes tanpa kamera)
-  void _simulate() => _handleScan('SE-V1|2|1755245653|nonce|sig');
+  // Fungsi _simulate() sudah dihapus
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +133,6 @@ class _ScanPageState extends State<ScanPage> {
       appBar: AppBar(
         title: const Text('Scan QR'),
         actions: [
-          // Flash toggle
           IconButton(
             tooltip: 'Flash',
             onPressed: () => _controller.toggleTorch(),
@@ -156,7 +144,6 @@ class _ScanPageState extends State<ScanPage> {
               },
             ),
           ),
-          // Switch camera
           IconButton(
             tooltip: 'Switch Camera',
             onPressed: () => _controller.switchCamera(),
@@ -168,23 +155,16 @@ class _ScanPageState extends State<ScanPage> {
               },
             ),
           ),
-          // Simulate (opsional)
-          IconButton(
-            tooltip: 'Simulate',
-            onPressed: _simulate,
-            icon: const Icon(Icons.play_arrow),
-          ),
+          // Tombol Simulate sudah dihapus
         ],
       ),
       body: Stack(
         children: [
-          // Preview kamera + deteksi
           MobileScanner(
             controller: _controller,
             onDetect: (capture) {
               final code = capture.barcodes.firstOrNull?.rawValue;
               if (code != null && !_busy) {
-                // tunjukin deteksi sekali
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Detected: $code'), duration: const Duration(milliseconds: 700)),
                 );
@@ -192,8 +172,6 @@ class _ScanPageState extends State<ScanPage> {
               }
             },
           ),
-
-          // Overlay frame sederhana
           IgnorePointer(
             child: Center(
               child: Container(
@@ -205,8 +183,6 @@ class _ScanPageState extends State<ScanPage> {
               ),
             ),
           ),
-
-          // Banner status bawah
           if (_banner != null)
             Align(
               alignment: Alignment.bottomCenter,
