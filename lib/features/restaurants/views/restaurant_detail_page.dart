@@ -17,7 +17,7 @@ class RestaurantDetailPage extends StatelessWidget {
     final Uri googleMapsUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
     
     if (await canLaunchUrl(googleMapsUrl)) {
-      await launchUrl(googleMapsUrl);
+      await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
     } else {
       // Tampilkan pesan error jika tidak bisa membuka link
       if (context.mounted) {

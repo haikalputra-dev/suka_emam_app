@@ -91,30 +91,31 @@ class RestaurantCard extends StatelessWidget {
                     Text(
                       restaurant.shortAddress,
                       style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      overflow: TextOverflow.ellipsis
                     ),
-                    const Spacer(), // Mendorong avatar ke kanan
-                    // Tumpukan Avatar (Social Proof)
-                    SizedBox(
-                      width: 60,
-                      child: Stack(
-                        children: [
-                          // Avatar-avatar ini bisa diganti dengan data asli nanti
-                          const CircleAvatar(radius: 12, backgroundColor: Colors.orange),
-                          Positioned(
-                            left: 15,
-                            child: const CircleAvatar(radius: 12, backgroundColor: Colors.blue),
-                          ),
-                          Positioned(
-                            left: 30,
-                            child: CircleAvatar(
-                              radius: 12,
-                              backgroundColor: Colors.grey[300],
-                              child: const Text('+50', style: TextStyle(fontSize: 8, color: Colors.black)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    // const Spacer(), // Mendorong avatar ke kanan
+                    // // Tumpukan Avatar (Social Proof)
+                    // SizedBox(
+                    //   width: 60,
+                    //   child: Stack(
+                    //     children: [
+                    //       // Avatar-avatar ini bisa diganti dengan data asli nanti
+                    //       const CircleAvatar(radius: 12, backgroundColor: Colors.orange),
+                    //       Positioned(
+                    //         left: 15,
+                    //         child: const CircleAvatar(radius: 12, backgroundColor: Colors.blue),
+                    //       ),
+                    //       Positioned(
+                    //         left: 30,
+                    //         child: CircleAvatar(
+                    //           radius: 12,
+                    //           backgroundColor: Colors.grey[300],
+                    //           child: const Text('+50', style: TextStyle(fontSize: 8, color: Colors.black)),
+                    //         ),
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
                   ],
                 ),
               ],

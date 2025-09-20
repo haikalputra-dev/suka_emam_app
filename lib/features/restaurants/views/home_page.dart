@@ -3,8 +3,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:suka_emam_app/features/restaurants/views/all_places_page.dart';
-import '../models/restaurant.dart';
-import '../services/mock_restaurant_service.dart';
+import 'package:suka_emam_app/features/leaderboard/views/leaderboard_page.dart';
+import '../models/restaurant.dart' as restaurant_models;
+import '../services/restaurant_service.dart';
 import '../widgets/restaurant_card.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,30 +16,30 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final MockRestaurantService _restaurantService = MockRestaurantService();
-  late Future<List<Restaurant>> _recommendedRestaurantsFuture;
+  // Ganti Mock service dengan service asli
+  final RestaurantService _restaurantService = RestaurantService();
+  // Gunakan tipe data dengan prefix
+  late Future<List<restaurant_models.Restaurant>> _recommendedRestaurantsFuture;
 
   final PageController _pageController = PageController(viewportFraction: 0.85);
 
   @override
   void initState() {
     super.initState();
-    _recommendedRestaurantsFuture = _restaurantService.getRecommendedRestaurants();
+    // Panggil service asli dengan parameter 'onlyRecommended: true'
+    _recommendedRestaurantsFuture = _restaurantService.getRestaurants(onlyRecommended: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-
-    // Ambil data user yang sedang login
     final user = FirebaseAuth.instance.currentUser;
-    // Siapkan nama dan URL foto user dengan placeholder
     final userName = user?.displayName?.isNotEmpty == true ? user!.displayName! : 'Guest';
-    final photoURL = user?.photoURL; // <-- PERUBAHAN DI SINI: Ambil URL foto
+    final photoURL = user?.photoURL;
 
-    // <-- PERUBAHAN DI SINI: Tambahkan SafeArea
-    return SafeArea( 
-      child: FutureBuilder<List<Restaurant>>(
+    return SafeArea(
+      // Gunakan tipe data dengan prefix di FutureBuilder
+      child: FutureBuilder<List<restaurant_models.Restaurant>>(
         future: _recommendedRestaurantsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -49,54 +50,65 @@ class _HomePageState extends State<HomePage> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          if (snapshot.hasData) {
+          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
             final restaurants = snapshot.data!;
-            return SingleChildScrollView( // <-- PERUBAHAN DI SINI: Agar bisa di-scroll jika kontennya panjang
+            return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- BAGIAN HEADER NAMA USER (PENGGANTI APPBAR) ---
-                  Padding(
+                  // --- BAGIAN HEADER (Tidak ada perubahan) ---
+Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: Row(
                       children: [
-                        // <-- PERUBAHAN DI SINI: Logika untuk menampilkan foto profil
                         CircleAvatar(
-                          radius: 20, // Sedikit diperbesar agar terlihat bagus
+                          radius: 20,
                           backgroundColor: Colors.grey[200],
-                          // Jika photoURL ada, tampilkan sebagai background. Jika tidak, tampilkan null.
                           backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
-                          // Jika photoURL tidak ada (backgroundImage null), tampilkan ikon person.
                           child: photoURL == null
                               ? const Icon(Icons.person, color: Colors.grey)
                               : null,
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          userName,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        // Bungkus dengan Expanded agar nama user mengambil sisa ruang
+                        // dan mendorong ikon ke paling kanan.
+                        Expanded(
+                          child: Text(
+                            userName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                        // [BARU] Tombol ikon untuk leaderboard
+                        IconButton(
+                          icon: const Icon(Icons.leaderboard_outlined, color: Colors.amber),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LeaderboardPage()),
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
 
-                  // Bagian Judul
+                  // --- BAGIAN JUDUL (Tidak ada perubahan) ---
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 24),
-                        const Text('Explore', style: TextStyle(fontSize: 40)),
-                        const Text(
+                      children: const [
+                        SizedBox(height: 24),
+                        Text('Explore', style: TextStyle(fontSize: 40)),
+                        Text(
                           'Dish in Sukabumi!',
                           style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFFF9A825)),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                       ],
                     ),
                   ),
-                  
+
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Row(
@@ -120,13 +132,14 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // PageView
+                  // PageView (Tidak ada perubahan)
                   SizedBox(
-                    height: screenHeight * 0.65,
+                    height: screenHeight * 0.45, // Mungkin perlu disesuaikan
                     child: PageView.builder(
                       controller: _pageController,
                       itemCount: restaurants.length,
                       itemBuilder: (context, index) {
+                        // Di sini tidak perlu parameter 'onlyRecommended'
                         return RestaurantCard(restaurant: restaurants[index]);
                       },
                     ),
@@ -135,7 +148,8 @@ class _HomePageState extends State<HomePage> {
               ),
             );
           }
-          return const Center(child: Text('No recommended restaurants found.'));
+          // Tampilan jika tidak ada data atau data kosong
+          return const Center(child: Text('Tidak ada restoran rekomendasi yang ditemukan.'));
         },
       ),
     );

@@ -10,8 +10,7 @@ class ProfileService {
   Future<UserProfile> getProfile() async {
     try {
       final response = await _dio.get('/me'); // Panggil endpoint /api/me
-      // Data sudah dalam format JSON Map, langsung parsing
-      return UserProfile.fromJson(response.data);
+      return UserProfile.fromJson(response.data['data']);
     } on DioException catch (e) {
       // Tangani error API
       print('Error fetching profile: $e');

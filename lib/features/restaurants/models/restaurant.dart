@@ -13,6 +13,7 @@ class Restaurant {
   final bool isRecommended;
   final double latitude;
   final double longitude;
+  final double? distanceKm;
 
   Restaurant({
     required this.id,
@@ -27,6 +28,7 @@ class Restaurant {
     required this.isRecommended,
     required this.latitude,
     required this.longitude,
+    this.distanceKm,
   });
 
   // Factory constructor untuk membuat instance Restaurant dari JSON
@@ -41,7 +43,7 @@ class Restaurant {
     return Restaurant(
       id: json['id'],
       name: json['name'] ?? 'Nama Tidak Tersedia',
-      shortAddress: json['short_address'] ?? 'Alamat Tidak Tersedia',
+      shortAddress: json['shortAddress'] ?? 'Alamat Tidak Tersedia',
       description: json['description'] ?? '-',
       rating: (json['rating'] as num).toDouble(),
       reviewCount: json['review_count'] ?? 0,
@@ -54,6 +56,7 @@ class Restaurant {
       isRecommended: json['is_recommended'] ?? false,
       latitude: (locationData['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (locationData['longitude'] as num?)?.toDouble() ?? 0.0,
+      distanceKm: (json['distance_km'] as num?)?.toDouble(),
     );
   }
 }

@@ -1,88 +1,88 @@
 // lib/features/profile/models/user_profile.dart
 
-// Kelas untuk menampung riwayat check-in
-class CheckinHistory {
-  final int id;
-  final String restaurantName;
-  final int pointsEarned;
-  final String checkedInAt;
+// Dihapus: Kelas CheckinHistory dan LevelProgress tidak lagi di endpoint utama.
+// Tujuan: Membuat profil lebih cepat dimuat. Riwayat check-in bisa dimuat di halaman lain.
 
-  CheckinHistory({
-    required this.id,
-    required this.restaurantName,
-    required this.pointsEarned,
-    required this.checkedInAt,
-  });
-
-  factory CheckinHistory.fromJson(Map<String, dynamic> json) {
-    return CheckinHistory(
-      id: json['id'] ?? 0,
-      restaurantName: json['restaurant_name'] ?? 'Nama Restoran Tidak Ditemukan',
-      pointsEarned: json['points_earned'] ?? 0,
-      checkedInAt: json['checked_in_at'] ?? '-',
-    );
-  }
-}
-
-// Kelas untuk menampung data progres level
-class LevelProgress {
-  final int currentXp;
-  final int xpForNextLevel;
-  final double progressPercentage;
-
-  LevelProgress({
-    required this.currentXp,
-    required this.xpForNextLevel,
-    required this.progressPercentage,
-  });
-
-  factory LevelProgress.fromJson(Map<String, dynamic> json) {
-    return LevelProgress(
-      currentXp: json['current_xp'] ?? 0,
-      xpForNextLevel: json['xp_for_next_level'] ?? 100,
-      // Pastikan percentage adalah double antara 0.0 dan 100.0
-      progressPercentage: (json['progress_percentage'] as num?)?.toDouble() ?? 0.0,
-    );
-  }
-}
-
-// Kelas utama untuk profil pengguna
-class UserProfile {
+// Ditambahkan: Kelas baru untuk merepresentasikan sebuah Badge.
+class Badge {
   final int id;
   final String name;
-  final String email;
-  final String? avatar;
-  final int totalPoints;
-  final int level;
-  final LevelProgress levelProgress;
-  final List<CheckinHistory> checkinHistory;
+  final String description;
+  final String imageUrl;
 
-  UserProfile({
+  Badge({
     required this.id,
     required this.name,
-    required this.email,
-    this.avatar,
-    required this.totalPoints,
-    required this.level,
-    required this.levelProgress,
-    required this.checkinHistory,
+    required this.description,
+    required this.imageUrl,
   });
 
+  factory Badge.fromJson(Map<String, dynamic> json) {
+    return Badge(
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      name: json['name'] ?? 'Badge',
+      description: json['description'] ?? '',
+      imageUrl: (json['image_url'] as String?)?.trim() ?? '',
+    );
+  }
+
+    factory Badge.empty() {
+    return Badge(
+      id: 0,
+      name: '',
+      description: '',
+      imageUrl: '',
+    );
+  }
+}
+
+// Diperbarui: Kelas utama UserProfile disesuaikan dengan data baru dari API.
+class UserProfile {
+  final String name;
+  final String email;
+  final String? avatarUrl; // Menggunakan 'avatarUrl' agar lebih deskriptif
+  final int totalPoints;
+  final int totalReviews;
+  final int totalBadges;
+  final int level;
+  final List<Badge> badges;
+
+  UserProfile({
+    required this.name,
+    required this.email,
+    this.avatarUrl,
+    required this.totalPoints,
+    required this.totalReviews,
+    required this.totalBadges,
+    required this.level,
+    required this.badges,
+  });
+
+  static int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  // Diperbarui: Logika parsing JSON disesuaikan dengan struktur API terbaru.
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    // Ambil daftar riwayat check-in dan ubah menjadi List<CheckinHistory>
-    var historyList = (json['checkin_history'] as List?)
-        ?.map((item) => CheckinHistory.fromJson(item))
-        .toList() ?? [];
+    var badgeList = (json['badges'] as List?)
+            ?.map((item) => Badge.fromJson(item))
+            .toList() ??
+        [];
 
     return UserProfile(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? 'User',
-      email: json['email'] ?? '-',
-      avatar: json['avatar'],
-      totalPoints: json['total_points'] ?? 0,
-      level: json['level'] ?? 1,
-      levelProgress: LevelProgress.fromJson(json['level_progress'] ?? {}),
-      checkinHistory: historyList,
+      name: json['name'] ?? 'Pengguna SukaEmam',
+      email: json['email'] ?? 'Tidak ada email',
+      avatarUrl: json['avatar_url'],
+      
+      // Gunakan helper _parseInt untuk semua field angka
+      totalPoints: _parseInt(json['total_points']),
+      totalReviews: _parseInt(json['total_reviews']),
+      totalBadges: _parseInt(json['total_badges']),
+      level: _parseInt(json['level']),
+      
+      badges: badgeList,
     );
   }
 }

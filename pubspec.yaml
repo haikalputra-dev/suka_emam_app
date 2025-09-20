@@ -41,6 +41,7 @@ dependencies:
   go_router: ^16.1.0
   mobile_scanner: ^7.0.1
   flutter_secure_storage: ^9.2.4
+  flutter_launcher_icons: "^0.13.1"
   url_launcher: ^6.3.2
   cached_network_image: ^3.4.1
   intl: ^0.20.2
@@ -102,3 +103,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/suka_emam_logo.png" # <-- Sesuaikan dengan path file ikon Anda
+  adaptive_icon_background: "#FFFFFF" # <-- Warna background untuk Android (ganti sesuai selera)
+  adaptive_icon_foreground: "assets/suka_emam_logo.png"

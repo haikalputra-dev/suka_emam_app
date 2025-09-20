@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../core/dio_client.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:suka_emam_app/core/location_service.dart';
+import 'package:suka_emam_app/features/scan/models/checkin_response.dart';
+import 'package:suka_emam_app/features/scan/services/checkin_service.dart';
+import 'package:suka_emam_app/features/scan/views/review_bottom_sheet.dart';
+import 'package:suka_emam_app/features/scan/views/success_page.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
@@ -11,192 +14,175 @@ class ScanPage extends StatefulWidget {
 }
 
 class _ScanPageState extends State<ScanPage> {
-  bool _busy = false;
-  String? _banner;
-
-  final MobileScannerController _controller = MobileScannerController(
-    formats: [BarcodeFormat.qrCode],
+  final MobileScannerController _scannerController = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
-    facing: CameraFacing.back,
-    returnImage: false,
   );
+  final CheckinService _checkinService = CheckinService();
+  final LocationService _locationService = LocationService();
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  bool _isLoading = false;
+
+  // Fungsi utama yang dipanggil saat QR terdeteksi
+  Future<void> _onDetect(BarcodeCapture capture) async {
+    if (_isLoading) return; // Mencegah scan ganda saat proses berjalan
+
+    final String? qrCode = capture.barcodes.first.rawValue;
+    if (qrCode == null) return;
+
+    setState(() => _isLoading = true);
+    _scannerController.stop(); // Hentikan kamera sementara
+
+    try {
+      // 1. Ambil lokasi pengguna
+      final position = await _locationService.getCurrentPosition();
+
+      // 2. Kirim data ke API check-in via service baru
+      final checkinResult = await _checkinService.performCheckin(
+        qrCode: qrCode,
+        position: position,
+      );
+
+      // 3. Tampilkan halaman sukses check-in & tunggu hingga ditutup
+      await _showCheckinSuccess(checkinResult);
+
+      // 4. Setelah halaman sukses ditutup, tampilkan pop-up review
+      await _showReviewBottomSheet(checkinResult);
+
+    } catch (e) {
+      _showErrorSnackbar(e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _scannerController.start(); // Nyalakan lagi kamera untuk scan berikutnya
+      }
+    }
   }
 
-  Future<Position> _getPosition() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw 'Location service off. Aktifkan GPS.';
-    }
-
-    var perm = await Geolocator.checkPermission();
-    if (perm == LocationPermission.denied) {
-      perm = await Geolocator.requestPermission();
-    }
-    if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
-      throw 'Izin lokasi ditolak.';
-    }
-
-    return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-      timeLimit: const Duration(seconds: 12),
+  // Helper untuk menampilkan halaman sukses check-in
+  Future<void> _showCheckinSuccess(CheckinSuccessResponse result) {
+    return Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => SuccessPage(
+        title: 'Scan QR Sukses!',
+        message: '+${result.pointsEarned} Poin',
+        imageAsset: 'assets/badges/scan_success.png', 
+        onClose: () => Navigator.of(context).pop(),
+      ),
+    ));
+  }
+  
+  // Helper untuk menampilkan pop-up review
+  Future<void> _showReviewBottomSheet(CheckinSuccessResponse checkinResult) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => ReviewBottomSheet(
+        checkinResult: checkinResult,
+        onReviewSuccess: (reviewResult) {
+          // Jika review berhasil, tampilkan halaman sukses review
+          _showReviewSuccess(reviewResult);
+        },
+      ),
     );
   }
 
-  Future<void> _handleScan(String qr) async {
-    if (_busy) return;
-    setState(() {
-      _busy = true;
-      _banner = 'Memproses check-in...';
-    });
+  // Helper untuk menampilkan halaman sukses setelah review
+  void _showReviewSuccess(ReviewSuccessResponse reviewResult) {
+     // Gunakan pushReplacement agar tidak bisa kembali ke bottom sheet
+     Navigator.of(context).pushReplacement(MaterialPageRoute(
+      builder: (context) => SuccessPage(
+        title: 'Ulasan Sukses!',
+        message: 'Kamu mendapatkan +${reviewResult.pointsEarned} Poin',
+        imageAsset: 'assets/badges/review_success.png', // Sesuaikan path gambar Anda
+        onClose: () {
+          // Kembali ke halaman awal scan
+          Navigator.of(context).pop();
+        },
+      ),
+    ));
+  }
 
-    try {
-      await _controller.stop();
-      final pos = await _getPosition();
-
-      // --- MENGGUNAKAN METHOD DIO CLIENT YANG SUDAH RAPI ---
-      final res = await DioClient.checkin(
-        qr: qr,
-        lat: pos.latitude,
-        lng: pos.longitude,
-        accuracy: pos.accuracy,
+  // Helper untuk menampilkan error dalam bentuk Snackbar
+  void _showErrorSnackbar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
-      // ----------------------------------------------------
-
-      final data = res.data as Map;
-      final pts = data['points_earned'] ?? data['points'] ?? 0;
-      final total = data['total_points'];
-      final dist = data['distance_m'];
-      final radius = data['radius_m'];
-
-      if (!mounted) return;
-      setState(() => _banner = 'Check-in sukses! +$pts pts (∑ $total) • ~${dist}m/≤${radius}m');
-
-      await showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Check-in Berhasil 🎉'),
-          content: Text('Poin +$pts\nTotal: $total\nJarak: ~${dist}m (batas ${radius}m)'),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
-        ),
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop(); // balik ke halaman sebelumnya
-    } on DioException catch (e) {
-      print('DIO ERROR STATUS CODE: ${e.response?.statusCode}');
-      print('DIO RESPONSE BODY: ${e.response?.data}');
-      String msg = 'Gagal check-in';
-      final r = e.response;
-      if (r != null) {
-        final body = r.data;
-        if (body is Map && body['errors'] is Map) {
-          final errs = body['errors'] as Map;
-          for (final key in ['limit', 'location', 'qr', 'auth']) {
-            if (errs[key] is List && (errs[key] as List).isNotEmpty) {
-              msg = (errs[key] as List).first.toString();
-              break;
-            }
-          }
-          if (msg == 'Gagal check-in' && errs.isNotEmpty) {
-            final first = (errs.values.first as List).first;
-            msg = first.toString();
-          }
-        } else if (body is Map && body['message'] is String) {
-          msg = body['message'] as String;
-        }
-      } else {
-        msg = e.message ?? msg;
-      }
-
-      if (!mounted) return;
-      setState(() => _banner = 'Gagal: $msg');
-      await _controller.start();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _banner = 'Gagal: $e');
-      await _controller.start();
-    } finally {
-      await Future.delayed(const Duration(seconds: 2));
-      if (mounted) setState(() => _busy = false);
     }
   }
 
-  // Fungsi _simulate() sudah dihapus
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scan QR'),
-        actions: [
-          IconButton(
-            tooltip: 'Flash',
-            onPressed: () => _controller.toggleTorch(),
-            icon: ValueListenableBuilder(
-              valueListenable: _controller,
-              builder: (context, state, _) {
-                final s = state as MobileScannerState;
-                return Icon(s.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off);
-              },
-            ),
-          ),
-          IconButton(
-            tooltip: 'Switch Camera',
-            onPressed: () => _controller.switchCamera(),
-            icon: ValueListenableBuilder(
-              valueListenable: _controller,
-              builder: (context, state, _) {
-                final s = state as MobileScannerState;
-                return Icon(s.cameraDirection == CameraFacing.front ? Icons.camera_front : Icons.camera_rear);
-              },
-            ),
-          ),
-          // Tombol Simulate sudah dihapus
-        ],
-      ),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: (capture) {
-              final code = capture.barcodes.firstOrNull?.rawValue;
-              if (code != null && !_busy) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Detected: $code'), duration: const Duration(milliseconds: 700)),
-                );
-                _handleScan(code);
-              }
+    appBar: AppBar(
+      title: const Text('Scan QR Code'),
+      actions: [
+        IconButton(
+          tooltip: 'Flash',
+          onPressed: () => _scannerController.toggleTorch(),
+          icon: ValueListenableBuilder(
+            // Dengarkan seluruh controller
+            valueListenable: _scannerController,
+            builder: (context, state, child) {
+              // Di dalam builder, kita bisa akses state-nya
+              return Icon(state.torchState == TorchState.on 
+                  ? Icons.flash_on 
+                  : Icons.flash_off);
             },
           ),
-          IgnorePointer(
-            child: Center(
-              child: Container(
-                width: 260, height: 260,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white, width: 3),
-                ),
-              ),
+        ),
+        IconButton(
+          tooltip: 'Switch Camera',
+          onPressed: () => _scannerController.switchCamera(),
+          icon: ValueListenableBuilder(
+            // Dengarkan seluruh controller
+            valueListenable: _scannerController,
+            builder: (context, state, child) {
+              // Di dalam builder, kita bisa akses state-nya
+              return Icon(state.cameraDirection == CameraFacing.front
+                  ? Icons.camera_front
+                  : Icons.camera_rear);
+            },
+          ),
+        ),
+      ],
+    ),
+      body: Stack(
+        alignment: Alignment.center,
+        children: [
+          MobileScanner(
+            controller: _scannerController,
+            onDetect: _onDetect,
+          ),
+          // UI Overlay (kotak scan, banner, dll)
+          Container(
+            width: 260,
+            height: 260,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.8), width: 4),
             ),
           ),
-          if (_banner != null)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.80),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(_banner!, style: const TextStyle(color: Colors.white)),
-                  ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.white),
+                    SizedBox(height: 16),
+                    Text('Memproses...', style: TextStyle(color: Colors.white, fontSize: 16)),
+                  ],
                 ),
               ),
             ),
@@ -204,8 +190,4 @@ class _ScanPageState extends State<ScanPage> {
       ),
     );
   }
-}
-
-extension<T> on List<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }
