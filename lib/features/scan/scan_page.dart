@@ -4,7 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:suka_emam_app/core/location_service.dart';
 import 'package:suka_emam_app/features/scan/models/checkin_response.dart';
 import 'package:suka_emam_app/features/scan/services/checkin_service.dart';
-import 'package:suka_emam_app/features/scan/views/review_bottom_sheet.dart';
+import 'package:suka_emam_app/features/scan/views/processing_page.dart';
 import 'package:suka_emam_app/features/scan/views/success_page.dart';
 
 class ScanPage extends StatefulWidget {
@@ -20,89 +20,60 @@ class _ScanPageState extends State<ScanPage> {
   final CheckinService _checkinService = CheckinService();
   final LocationService _locationService = LocationService();
 
-  bool _isLoading = false;
+  bool _isProcessing = false; // Mencegah scan ganda saat proses berjalan
 
-  // Fungsi utama yang dipanggil saat QR terdeteksi
-  Future<void> _onDetect(BarcodeCapture capture) async {
-    if (_isLoading) return; // Mencegah scan ganda saat proses berjalan
+  // Fungsi yang dipanggil saat QR terdeteksi
+  void _onDetect(BarcodeCapture capture) {
+    if (_isProcessing) return;
 
     final String? qrCode = capture.barcodes.first.rawValue;
-    if (qrCode == null) return;
+    if (qrCode == null || qrCode.isEmpty) return;
+    
+    setState(() => _isProcessing = true);
+    _scannerController.stop(); // Hentikan kamera
 
-    setState(() => _isLoading = true);
-    _scannerController.stop(); // Hentikan kamera sementara
+    // 1. Langsung navigasi ke halaman proses
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProcessingPage()),
+    ).then((_) {
+      // Ini akan dijalankan saat kita kembali dari halaman proses (jika terjadi error)
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        _scannerController.start(); // Nyalakan lagi kamera
+      }
+    });
 
+    // 2. Jalankan logika check-in di latar belakang
+    _submitCheckin(qrCode);
+  }
+
+  // Fungsi untuk mengirim data check-in ke server
+  Future<void> _submitCheckin(String qrCode) async {
     try {
-      // 1. Ambil lokasi pengguna
-      final position = await _locationService.getCurrentPosition();
+      // Ambil lokasi pengguna
+      final Position position = await _locationService.getCurrentPosition();
 
-      // 2. Kirim data ke API check-in via service baru
-      final checkinResult = await _checkinService.performCheckin(
+      // Kirim data ke API check-in
+      final CheckinSuccessResponse checkinResult = await _checkinService.performCheckin(
         qrCode: qrCode,
         position: position,
       );
 
-      // 3. Tampilkan halaman sukses check-in & tunggu hingga ditutup
-      await _showCheckinSuccess(checkinResult);
-
-      // 4. Setelah halaman sukses ditutup, tampilkan pop-up review
-      await _showReviewBottomSheet(checkinResult);
-
-    } catch (e) {
-      _showErrorSnackbar(e.toString());
-    } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
-        _scannerController.start(); // Nyalakan lagi kamera untuk scan berikutnya
+        // 3. Ganti halaman proses dengan halaman sukses
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => CheckinSuccessPage(result: checkinResult)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        // Jika gagal, kembali dari halaman proses
+        Navigator.pop(context); 
+        _showErrorSnackbar(e.toString());
       }
     }
-  }
-
-  // Helper untuk menampilkan halaman sukses check-in
-  Future<void> _showCheckinSuccess(CheckinSuccessResponse result) {
-    return Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => SuccessPage(
-        title: 'Scan QR Sukses!',
-        message: '+${result.pointsEarned} Poin',
-        imageAsset: 'assets/badges/scan_success.png', 
-        onClose: () => Navigator.of(context).pop(),
-      ),
-    ));
-  }
-  
-  // Helper untuk menampilkan pop-up review
-  Future<void> _showReviewBottomSheet(CheckinSuccessResponse checkinResult) {
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => ReviewBottomSheet(
-        checkinResult: checkinResult,
-        onReviewSuccess: (reviewResult) {
-          // Jika review berhasil, tampilkan halaman sukses review
-          _showReviewSuccess(reviewResult);
-        },
-      ),
-    );
-  }
-
-  // Helper untuk menampilkan halaman sukses setelah review
-  void _showReviewSuccess(ReviewSuccessResponse reviewResult) {
-     // Gunakan pushReplacement agar tidak bisa kembali ke bottom sheet
-     Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (context) => SuccessPage(
-        title: 'Ulasan Sukses!',
-        message: 'Kamu mendapatkan +${reviewResult.pointsEarned} Poin',
-        imageAsset: 'assets/badges/review_success.png', // Sesuaikan path gambar Anda
-        onClose: () {
-          // Kembali ke halaman awal scan
-          Navigator.of(context).pop();
-        },
-      ),
-    ));
   }
 
   // Helper untuk menampilkan error dalam bentuk Snackbar
@@ -123,39 +94,35 @@ class _ScanPageState extends State<ScanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    appBar: AppBar(
-      title: const Text('Scan QR Code'),
-      actions: [
-        IconButton(
-          tooltip: 'Flash',
-          onPressed: () => _scannerController.toggleTorch(),
-          icon: ValueListenableBuilder(
-            // Dengarkan seluruh controller
-            valueListenable: _scannerController,
-            builder: (context, state, child) {
-              // Di dalam builder, kita bisa akses state-nya
-              return Icon(state.torchState == TorchState.on 
-                  ? Icons.flash_on 
-                  : Icons.flash_off);
-            },
+      appBar: AppBar(
+        title: const Text('Scan QR Code'),
+        actions: [
+          IconButton(
+            tooltip: 'Flash',
+            onPressed: () => _scannerController.toggleTorch(),
+            icon: ValueListenableBuilder(
+              valueListenable: _scannerController,
+              builder: (context, state, child) {
+                return Icon(state.torchState == TorchState.on 
+                    ? Icons.flash_on 
+                    : Icons.flash_off);
+              },
+            ),
           ),
-        ),
-        IconButton(
-          tooltip: 'Switch Camera',
-          onPressed: () => _scannerController.switchCamera(),
-          icon: ValueListenableBuilder(
-            // Dengarkan seluruh controller
-            valueListenable: _scannerController,
-            builder: (context, state, child) {
-              // Di dalam builder, kita bisa akses state-nya
-              return Icon(state.cameraDirection == CameraFacing.front
-                  ? Icons.camera_front
-                  : Icons.camera_rear);
-            },
+          IconButton(
+            tooltip: 'Switch Camera',
+            onPressed: () => _scannerController.switchCamera(),
+            icon: ValueListenableBuilder(
+              valueListenable: _scannerController,
+              builder: (context, state, child) {
+                return Icon(state.cameraDirection == CameraFacing.front
+                    ? Icons.camera_front
+                    : Icons.camera_rear);
+              },
+            ),
           ),
-        ),
-      ],
-    ),
+        ],
+      ),
       body: Stack(
         alignment: Alignment.center,
         children: [
@@ -163,7 +130,7 @@ class _ScanPageState extends State<ScanPage> {
             controller: _scannerController,
             onDetect: _onDetect,
           ),
-          // UI Overlay (kotak scan, banner, dll)
+          // UI Overlay (kotak scan)
           Container(
             width: 260,
             height: 260,
@@ -172,20 +139,6 @@ class _ScanPageState extends State<ScanPage> {
               border: Border.all(color: Colors.white.withOpacity(0.8), width: 4),
             ),
           ),
-          if (_isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.5),
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 16),
-                    Text('Memproses...', style: TextStyle(color: Colors.white, fontSize: 16)),
-                  ],
-                ),
-              ),
-            ),
         ],
       ),
     );

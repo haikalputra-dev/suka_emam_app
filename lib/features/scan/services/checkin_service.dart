@@ -3,6 +3,7 @@
 import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:suka_emam_app/core/dio_client.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/checkin_response.dart';
 
 class CheckinService {
@@ -31,22 +32,32 @@ class CheckinService {
     }
   }
 
-  // Method untuk mengirim review yang terikat pada check-in
-  Future<ReviewSuccessResponse> submitReviewForCheckin({
+  Future<void> submitReviewForCheckin({
     required String checkinId,
     required int rating,
     required String comment,
+    XFile? photo, // Tambahkan parameter XFile yang bisa null
   }) async {
     try {
-      // Panggil endpoint baru
-      final response = await _dio.post(
+      // Siapkan data form
+      final formData = FormData.fromMap({
+        'rating': rating,
+        'comment': comment,
+      });
+
+      // Jika ada foto yang dipilih, tambahkan ke form data
+      if (photo != null) {
+        formData.files.add(MapEntry(
+          'photo',
+          await MultipartFile.fromFile(photo.path, filename: photo.name),
+        ));
+      }
+
+      // Kirim request dengan FormData
+      await _dio.post(
         '/checkins/$checkinId/review',
-        data: {
-          'rating': rating,
-          'comment': comment,
-        },
+        data: formData,
       );
-      return ReviewSuccessResponse.fromJson(response.data);
     } on DioException catch (e) {
       final errorMessage = e.response?.data['message'] ?? 'Gagal mengirim review.';
       throw Exception(errorMessage);

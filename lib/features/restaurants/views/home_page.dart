@@ -1,9 +1,7 @@
-// lib/features/restaurants/views/home_page.dart
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:suka_emam_app/features/restaurants/views/all_places_page.dart';
 import 'package:suka_emam_app/features/leaderboard/views/leaderboard_page.dart';
+import 'package:suka_emam_app/features/restaurants/views/all_places_page.dart';
 import '../models/restaurant.dart' as restaurant_models;
 import '../services/restaurant_service.dart';
 import '../widgets/restaurant_card.dart';
@@ -16,18 +14,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Ganti Mock service dengan service asli
   final RestaurantService _restaurantService = RestaurantService();
-  // Gunakan tipe data dengan prefix
-  late Future<List<restaurant_models.Restaurant>> _recommendedRestaurantsFuture;
+  // Ganti nama variabel agar lebih deskriptif
+  late Future<List<restaurant_models.Restaurant>> _topRestaurantsFuture;
 
   final PageController _pageController = PageController(viewportFraction: 0.85);
 
   @override
   void initState() {
     super.initState();
-    // Panggil service asli dengan parameter 'onlyRecommended: true'
-    _recommendedRestaurantsFuture = _restaurantService.getRestaurants(onlyRecommended: true);
+    // Panggil service dengan parameter baru 'sortBy: top_visits'
+    _topRestaurantsFuture = _restaurantService.getRestaurants(sortBy: 'top_visits');
   }
 
   @override
@@ -38,9 +35,9 @@ class _HomePageState extends State<HomePage> {
     final photoURL = user?.photoURL;
 
     return SafeArea(
-      // Gunakan tipe data dengan prefix di FutureBuilder
       child: FutureBuilder<List<restaurant_models.Restaurant>>(
-        future: _recommendedRestaurantsFuture,
+        // Gunakan future yang sudah diperbarui
+        future: _topRestaurantsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -57,7 +54,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // --- BAGIAN HEADER (Tidak ada perubahan) ---
-Padding(
+                  Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: Row(
                       children: [
@@ -65,27 +62,20 @@ Padding(
                           radius: 20,
                           backgroundColor: Colors.grey[200],
                           backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
-                          child: photoURL == null
-                              ? const Icon(Icons.person, color: Colors.grey)
-                              : null,
+                          child: photoURL == null ? const Icon(Icons.person, color: Colors.grey) : null,
                         ),
                         const SizedBox(width: 12),
-                        // Bungkus dengan Expanded agar nama user mengambil sisa ruang
-                        // dan mendorong ikon ke paling kanan.
                         Expanded(
                           child: Text(
                             userName,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                         ),
-                        // [BARU] Tombol ikon untuk leaderboard
                         IconButton(
                           icon: const Icon(Icons.leaderboard_outlined, color: Colors.amber),
+                          tooltip: 'Papan Peringkat',
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const LeaderboardPage()),
-                            );
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const LeaderboardPage()));
                           },
                         ),
                       ],
@@ -109,23 +99,21 @@ Padding(
                     ),
                   ),
 
+                  // --- [PERUBAHAN] Judul Sesi ---
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Recommended for you',
+                          'Paling Sering Dikunjungi', // <-- Teks diubah
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const AllPlacesPage()),
-                            );
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const AllPlacesPage()));
                           },
-                          child: const Text('View all'),
+                          child: const Text('Lihat semua'),
                         ),
                       ],
                     ),
@@ -134,12 +122,11 @@ Padding(
 
                   // PageView (Tidak ada perubahan)
                   SizedBox(
-                    height: screenHeight * 0.45, // Mungkin perlu disesuaikan
+                    height: screenHeight * 0.45,
                     child: PageView.builder(
                       controller: _pageController,
                       itemCount: restaurants.length,
                       itemBuilder: (context, index) {
-                        // Di sini tidak perlu parameter 'onlyRecommended'
                         return RestaurantCard(restaurant: restaurants[index]);
                       },
                     ),
@@ -148,10 +135,11 @@ Padding(
               ),
             );
           }
-          // Tampilan jika tidak ada data atau data kosong
-          return const Center(child: Text('Tidak ada restoran rekomendasi yang ditemukan.'));
+          // Perbarui pesan jika tidak ada data
+          return const Center(child: Text('Belum ada data restoran yang bisa ditampilkan.'));
         },
       ),
     );
   }
 }
+

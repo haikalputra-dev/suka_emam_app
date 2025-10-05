@@ -1,16 +1,16 @@
-// lib/features/restaurants/services/restaurant_service.dart
 import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart'; // Impor Position
 import '../models/restaurant.dart';
+import '../models/review.dart'; // <-- Import model Review
 import '../../../core/dio_client.dart';
 
 class RestaurantService {
   final Dio _dio = DioClient.i;
 
-  // Update method untuk menerima kedua parameter: Position dan onlyRecommended
+  // Update method untuk menerima kedua parameter: Position dan sortBy
   Future<List<Restaurant>> getRestaurants({
     Position? userPosition,
-    bool onlyRecommended = false,
+    String? sortBy,
   }) async {
     try {
       // Siapkan query parameter
@@ -22,9 +22,9 @@ class RestaurantService {
         queryParams['lng'] = userPosition.longitude;
       }
       
-      // Tambahkan filter recommended jika diminta
-      if (onlyRecommended) {
-        queryParams['recommended'] = '1';
+      // Tambahkan filter sortBy jika diminta
+      if (sortBy != null) {
+        queryParams['sortBy'] = sortBy;
       }
       
       // Kirim request dengan query parameter
@@ -41,29 +41,30 @@ class RestaurantService {
 
       List<Restaurant> restaurants = restaurantData.map((json) => Restaurant.fromJson(json)).toList();
       
-      // Jika API tidak mendukung filter recommended, lakukan filter di client-side
-      if (onlyRecommended && !queryParams.containsKey('recommended')) {
-        restaurants = restaurants.where((restaurant) => restaurant.isRecommended == true).toList();
-      }
-      
       return restaurants;
     } on DioException catch (e) {
-      print('Error fetching restaurants: $e');
-      throw Exception('Gagal memuat restoran.');
+      final errorMessage = e.response?.data?['message'] ?? 'Gagal memuat restoran. Periksa koneksi internet Anda.';
+      throw Exception(errorMessage);
     }
   }
 
-  // Method khusus untuk mendapatkan restoran recommended (opsional)
-  Future<List<Restaurant>> getRecommendedRestaurants({Position? userPosition}) async {
-    return getRestaurants(userPosition: userPosition, onlyRecommended: true);
+  /// [METODE BARU] Mengambil daftar review untuk sebuah restoran.
+  Future<List<Review>> getReviewsForRestaurant(int restaurantId) async {
+    try {
+      final response = await _dio.get('/restaurants/$restaurantId/reviews');
+
+      if (response.statusCode == 200 && response.data['data'] is List) {
+        List<dynamic> reviewData = response.data['data'];
+        return reviewData.map((json) => Review.fromJson(json)).toList();
+      } else {
+        throw Exception('Gagal memuat review.');
+      }
+    } on DioException catch (e) {
+      throw Exception('Error: ${e.response?.data?['message'] ?? 'Gagal memuat review.'}');
+    }
   }
 
-  // Method khusus untuk mendapatkan semua restoran (opsional)
-  Future<List<Restaurant>> getAllRestaurants({Position? userPosition}) async {
-    return getRestaurants(userPosition: userPosition, onlyRecommended: false);
-  }
-
-    Future<void> submitReview({
+  Future<void> submitReview({
     required int restaurantId,
     required int rating,
     required String comment,
@@ -84,3 +85,4 @@ class RestaurantService {
     }
   }
 }
+

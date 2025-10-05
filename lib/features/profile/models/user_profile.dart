@@ -1,9 +1,4 @@
-// lib/features/profile/models/user_profile.dart
 
-// Dihapus: Kelas CheckinHistory dan LevelProgress tidak lagi di endpoint utama.
-// Tujuan: Membuat profil lebih cepat dimuat. Riwayat check-in bisa dimuat di halaman lain.
-
-// Ditambahkan: Kelas baru untuk merepresentasikan sebuah Badge.
 class Badge {
   final int id;
   final String name;
@@ -45,6 +40,9 @@ class UserProfile {
   final int totalReviews;
   final int totalBadges;
   final int level;
+  final String? instagramUsername;
+  final String? tiktokUsername;
+  final String? facebookProfileUrl;
   final List<Badge> badges;
 
   UserProfile({
@@ -55,6 +53,9 @@ class UserProfile {
     required this.totalReviews,
     required this.totalBadges,
     required this.level,
+    required this.instagramUsername,
+    required this.tiktokUsername,
+    required this.facebookProfileUrl,
     required this.badges,
   });
 
@@ -81,6 +82,10 @@ class UserProfile {
       totalReviews: _parseInt(json['total_reviews']),
       totalBadges: _parseInt(json['total_badges']),
       level: _parseInt(json['level']),
+
+      instagramUsername: json['instagram_username'],
+      tiktokUsername: json['tiktok_username'],
+      facebookProfileUrl: json['facebook_profile_url'],
       
       badges: badgeList,
     );

@@ -1,174 +1,110 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'auth_service.dart';
-import 'sign_up_page.dart';
+import 'package:suka_emam_app/features/auth/auth_service.dart';
 
+// Nama kelas sekarang benar: SignInPage
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
+
   @override
   State<SignInPage> createState() => _SignInPageState();
 }
 
 class _SignInPageState extends State<SignInPage> {
-  final _svc = AuthService();
-  final _form = GlobalKey<FormState>();
-  final _email = TextEditingController();
-  final _pass = TextEditingController();
-  bool _obscure = true;
-  bool _loading = false;
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
-  void _toast(String msg, {Color? color}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: color),
-    );
-  }
-
-  Future<void> _doEmail() async {
-    if (!_form.currentState!.validate()) return;
-    setState(() => _loading = true);
+  // Fungsi generik untuk menangani proses login
+  void _handleLogin(Future<void> Function() loginMethod) async {
+    setState(() => _isLoading = true);
     try {
-      await _svc.signInEmail(_email.text.trim(), _pass.text);
-      _toast('Sign in success', color: Colors.green);
-      // TODO: navigate to Home
-    } on FirebaseAuthException catch (e) {
-      _toast(_map(e));
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _doGoogle() async {
-    setState(() => _loading = true);
-    try {
-      await _svc.signInWithGoogle();
-            final user = FirebaseAuth.instance.currentUser;
-            if (user != null) {
-              final idToken = await user.getIdToken();
-              print('--- FIREBASE ID TOKEN ---');
-              print(idToken); // Token akan muncul di Debug Console
-              print('--- END TOKEN ---');
-            }
-      _toast('Signed in with Google', color: Colors.green);
-      // TODO: navigate to Home
+      await loginMethod();
+      // Navigasi akan ditangani secara otomatis oleh StreamBuilder di main.dart
     } catch (e) {
-      _toast('Google sign-in failed: $e');
+      // Menampilkan pesan error jika login dibatalkan atau gagal
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  String _map(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-email': return 'Email tidak valid';
-      case 'user-not-found': return 'Akun tidak ditemukan';
-      case 'wrong-password': return 'Password salah';
-      default: return e.message ?? 'Terjadi kesalahan';
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final green = const Color(0xFF2E7D32);
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _form,
-                child: Column(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              const Text('Sign in', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              const Text('Please sign in to continue', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              const SizedBox(height: 100), // Beri ruang lebih
+              
+              // Tampilkan loading indicator jika sedang proses
+              if (_isLoading)
+                const Center(child: CircularProgressIndicator())
+              else
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 8),
-                    Text('Sign in', style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
-                    const SizedBox(height: 6),
-                    const Text('Please sign in to continue', textAlign: TextAlign.center),
-                    const SizedBox(height: 24),
-                    TextFormField(
-                      controller: _email,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(hintText: 'sukaemam@example.co.id'),
-                      validator: (v) => (v == null || !v.contains('@')) ? 'Masukkan email valid' : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _pass,
-                      obscureText: _obscure,
-                      decoration: InputDecoration(
-                        hintText: '**********',
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                    const Row(
+                      children: [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text('Or continue with'),
                         ),
-                      ),
-                      validator: (v) => (v == null || v.length < 6) ? 'Min 6 karakter' : null,
+                        Expanded(child: Divider()),
+                      ],
                     ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: _loading ? null : () async {
-                          final email = _email.text.trim();
-                          if (!email.contains('@')) return _toast('Masukkan email valid');
-                          try {
-                            await _svc.sendReset(email);
-                            _toast('Link reset dikirim ke $email', color: Colors.green);
-                          } catch (e) { _toast('Gagal kirim reset: $e'); }
-                        },
-                        child: const Text('Forget Password?'),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 52,
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(backgroundColor: green),
-                        onPressed: _loading ? null : _doEmail,
-                        child: _loading ? const CircularProgressIndicator() : const Text('Sign In'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account?"),
-                        TextButton(
-                          onPressed: _loading ? null : () {
-                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SignUpPage()));
-                          },
-                          child: const Text('Sign up'),
+                        // Tombol Google
+                        _buildSocialButton(
+                          onPressed: () => _handleLogin(_authService.signInWithGoogle),
+                          assetPath: 'assets/images/google.png', // Pastikan path ini benar
+                        ),
+                        
+                        const SizedBox(width: 20),
+                        // Tombol Facebook
+                        _buildSocialButton(
+                          onPressed: () => _handleLogin(_authService.signInWithFacebook),
+                          assetPath: 'assets/images/facebook.png', // Pastikan path ini benar
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    const Center(child: Text('Or continue with')),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: 
-                        InkWell(
-                          onTap: _loading ? null : _doGoogle,
-                          borderRadius: BorderRadius.circular(28),
-                          child: Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.black12),
-                              borderRadius: BorderRadius.circular(28),
-                              color: Colors.white,
-                            ),
-                            alignment: Alignment.center,
-                            child: Image.asset('assets/google.png', width: 28, height: 28),
-                          ),
-                        )
-
-                    ),
                   ],
                 ),
-              ),
-            ),
+              const Spacer(),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Widget helper untuk membuat tombol sosial media
+  Widget _buildSocialButton({required VoidCallback onPressed, required String assetPath}) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Image.asset(assetPath, height: 40),
       ),
     );
   }

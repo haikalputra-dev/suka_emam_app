@@ -47,6 +47,9 @@ dependencies:
   intl: ^0.20.2
   google_sign_in: ^7.1.1
   geolocator: ^14.0.2
+  image_picker: ^1.0.7
+  flutter_facebook_auth: ^6.0.4
+  flutter_svg: ^2.0.9
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +76,7 @@ flutter:
   assets:
     - assets/
     - assets/badges/
+    - assets/images/
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

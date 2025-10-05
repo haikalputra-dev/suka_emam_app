@@ -88,11 +88,14 @@ class RestaurantCard extends StatelessWidget {
                   children: [
                     Icon(Icons.location_on_outlined, color: Colors.grey[600], size: 16),
                     const SizedBox(width: 4),
-                    Text(
-                      restaurant.shortAddress,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      overflow: TextOverflow.ellipsis
-                    ),
+                      Expanded(
+                        child: Text(
+                          restaurant.shortAddress,
+                          style: TextStyle(color: Colors.grey[700]),
+                          maxLines: 2, // Batasi maksimal 2 baris
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     // const Spacer(), // Mendorong avatar ke kanan
                     // // Tumpukan Avatar (Social Proof)
                     // SizedBox(

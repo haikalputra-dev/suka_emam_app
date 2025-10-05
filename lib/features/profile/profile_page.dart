@@ -1,10 +1,13 @@
-// lib/features/profile/profile_page.dart
-
+import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:suka_emam_app/features/auth/auth_service.dart';
 import 'package:suka_emam_app/features/profile/models/user_profile.dart' as profile_models;
 import 'package:suka_emam_app/features/profile/services/profile_service.dart';
+import 'package:suka_emam_app/features/profile/views/point_history_page.dart';
+import 'package:suka_emam_app/features/profile/views/checkin_history_page.dart';
+import 'package:suka_emam_app/features/profile/views/review_history_page.dart';
+import 'package:suka_emam_app/features/profile/views/edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -40,10 +43,27 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text('Profil', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.black),
-            onPressed: () {
-              // Aksi untuk mengedit profil
+          // Bungkus tombol Edit dengan FutureBuilder agar hanya muncul saat data siap
+          FutureBuilder<profile_models.UserProfile>(
+            future: _profileFuture,
+            builder: (context, snapshot) {
+              // Tampilkan tombol hanya jika data sudah berhasil dimuat
+              if (snapshot.hasData) {
+                return IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.black),
+                  onPressed: () {
+                    // Navigasi ke halaman edit, lalu refresh saat kembali
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditProfilePage(userProfile: snapshot.data!),
+                      ),
+                    ).then((_) => _refreshProfile());
+                  },
+                );
+              }
+              // Jika data belum ada, tampilkan widget kosong
+              return const SizedBox.shrink();
             },
           ),
         ],
@@ -91,12 +111,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      _currentUser?.displayName ?? userProfile.name,
+                      userProfile.name, // Menggunakan nama dari API
                       style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
 
-                    // --- [BARU] Menampilkan Level Pengguna ---
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -112,11 +131,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                     ),
-                    // --- Batas Penambahan Level ---
                     
                     const SizedBox(height: 4),
                     Text(
-                      _currentUser?.email ?? userProfile.email,
+                      userProfile.email, // Menggunakan email dari API
                       style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 24),
@@ -136,21 +154,40 @@ class _ProfilePageState extends State<ProfilePage> {
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _buildStatItem('Total Badges', userProfile.totalBadges.toString()),
-                            _buildStatItem('Total Scores', userProfile.totalPoints.toString()),
-                            _buildStatItem('Total Reviews', userProfile.totalReviews.toString()),
+                            _buildStatItem(
+                              'Total Poin',
+                              userProfile.totalPoints.toString(),
+                              onTap: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => const PointHistoryPage()));
+                              },
+                            ),
+                            _buildStatItem(
+                              'Total Review',
+                              userProfile.totalReviews.toString(),
+                              onTap: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => const ReviewHistoryPage()));
+                              },
+                            ),
+                            // _buildStatItem('Total Review', userProfile.totalReviews.toString()),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 32),
 
-                    // --- Bagian Menu Item ---
-                    _buildMenuItem(context, Icons.history, 'Check-in History', () {}),
-                    _buildMenuItem(context, Icons.bookmark_border, 'Favorites', () {}),
-                    _buildMenuItem(context, Icons.settings_outlined, 'Settings', () {}),
+                    // --- [PERUBAHAN] Bagian Menu Item ---
+                    _buildMenuItem(context, Icons.history, 'Riwayat Check-in', () {
+                      // 2. Navigasi ke halaman riwayat check-in
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const CheckinHistoryPage()));
+                    }),
+                    // Menu 'Favorites' dihapus
+                    _buildMenuItem(context, Icons.settings_outlined, 'Settings', () {
+                      // TODO: Implementasi halaman settings
+                    }),
                     _buildMenuItem(context, Icons.logout, 'Logout', () async {
                       await AuthService().signOut();
                     }, isLogout: true),
+                    // ---------------------------------
                   ],
                 ),
               ),
@@ -161,18 +198,15 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // --- [MODIFIKASI] Helper untuk menampilkan badge dinamis ---
   Widget _buildBadgesSection(List<profile_models.Badge> badges) {
-    // Cari badge level (asumsi namanya mengandung kata 'Level' atau 'Tier')
     final levelBadge = badges.firstWhere(
       (b) => b.name.toLowerCase().contains('level') || b.name.toLowerCase().contains('tier'),
-      orElse: () => profile_models.Badge.empty(), // Kembalikan badge kosong jika tidak ada
+      orElse: () => profile_models.Badge.empty(),
     );
     
-    // Cari badge achievement terbaru (selain badge level)
     final achievementBadge = badges.reversed.firstWhere(
       (b) => !b.name.toLowerCase().contains('level') && !b.name.toLowerCase().contains('tier'),
-      orElse: () => profile_models.Badge.empty(), // Kembalikan badge kosong jika tidak ada
+      orElse: () => profile_models.Badge.empty(),
     );
 
     return Row(
@@ -184,7 +218,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // --- [BARU] Helper untuk membuat satu item badge ---
   Widget _buildBadgeItem(String title, profile_models.Badge badge) {
     return Column(
       children: [
@@ -217,20 +250,20 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.orange),
+  Widget _buildStatItem(String label, String value, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8), // Agar efek ripple rapi
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        child: Column(
+          children: [
+            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.orange)),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(color: Colors.grey[700])),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(color: Colors.grey[700]),
-        ),
-      ],
+      ),
     );
   }
 
@@ -255,3 +288,4 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
+

@@ -1,25 +1,43 @@
-// lib/features/restaurants/views/restaurant_detail_page.dart
-
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:suka_emam_app/features/restaurants/models/restaurant.dart';
+import 'package:suka_emam_app/features/restaurants/models/restaurant.dart' as restaurant_models;
+import 'package:suka_emam_app/features/restaurants/views/all_reviews_page.dart';
+import 'package:suka_emam_app/features/restaurants/models/review.dart';
+import 'package:suka_emam_app/features/restaurants/services/restaurant_service.dart';
+import 'package:suka_emam_app/features/restaurants/widgets/review_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class RestaurantDetailPage extends StatelessWidget {
-  final Restaurant restaurant;
+// 1. Ubah menjadi StatefulWidget
+class RestaurantDetailPage extends StatefulWidget {
+  final restaurant_models.Restaurant restaurant;
 
   const RestaurantDetailPage({super.key, required this.restaurant});
 
-    Future<void> _launchMapsUrl(BuildContext context) async {
-    final lat = restaurant.latitude;
-    final lng = restaurant.longitude;
-    // URL ini akan membuka aplikasi Google Maps jika terinstall, jika tidak akan membuka di browser
+  @override
+  State<RestaurantDetailPage> createState() => _RestaurantDetailPageState();
+}
+
+class _RestaurantDetailPageState extends State<RestaurantDetailPage> {
+  // 2. Tambahkan state untuk memuat data ulasan
+  final RestaurantService _restaurantService = RestaurantService();
+  late Future<List<Review>> _reviewsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // 3. Panggil API untuk mengambil ulasan saat halaman pertama kali dibuka
+    _reviewsFuture = _restaurantService.getReviewsForRestaurant(widget.restaurant.id);
+  }
+
+  Future<void> _launchMapsUrl(BuildContext context) async {
+    final lat = widget.restaurant.latitude;
+    final lng = widget.restaurant.longitude;
     final Uri googleMapsUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
     
     if (await canLaunchUrl(googleMapsUrl)) {
       await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
     } else {
-      // Tampilkan pesan error jika tidak bisa membuka link
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tidak bisa membuka Google Maps')),
@@ -33,30 +51,25 @@ class RestaurantDetailPage extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-  print('--- RENDERING DETAIL PAGE ---');
-  print('URL DITERIMA WIDGET: "${restaurant.mainImageUrl}"');
-  print('-----------------------------');
-
     return Scaffold(
-      // Kita tidak pakai AppBar di sini agar bisa membuat AppBar custom di atas gambar
       body: Stack(
         children: [
           // LAPISAN 1: GAMBAR BACKGROUND
           Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
+            top: 0, left: 0, right: 0,
             child: CachedNetworkImage(
-              imageUrl: restaurant.mainImageUrl,
+              imageUrl: widget.restaurant.mainImageUrl,
               fit: BoxFit.cover,
-              height: screenHeight * 0.45, // Gambar mengisi 45% atas layar
+              height: screenHeight * 0.45,
               width: screenWidth,
+              placeholder: (context, url) => Container(color: Colors.grey[300]),
+              errorWidget: (context, url, error) => const Icon(Icons.hide_image),
             ),
           ),
 
           // LAPISAN 2: KONTEN PUTIH YANG BISA DI-SCROLL
           Positioned.fill(
-            top: screenHeight * 0.4, // Kartu putih mulai dari 40% tinggi layar (agar menumpuk)
+            top: screenHeight * 0.4,
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -67,75 +80,111 @@ class RestaurantDetailPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Judul Restoran
                     Text(
-                      restaurant.name,
+                      widget.restaurant.name,
                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     
-                    // Info Lokasi & Rating
                     Row(
                       children: [
                         const Icon(Icons.location_on, color: Colors.grey, size: 16),
                         const SizedBox(width: 4),
-                        Text(restaurant.shortAddress, style: const TextStyle(fontSize: 14)),
+                        Expanded(child: Text(widget.restaurant.shortAddress, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis,)),
                         const SizedBox(width: 16),
                         const Icon(Icons.star, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
-                        Text('${restaurant.rating} (${restaurant.reviewCount})', style: const TextStyle(fontSize: 14)),
+                        Text(widget.restaurant.rating.toStringAsFixed(1), style: const TextStyle(fontSize: 14)),
                       ],
                     ),
                     const SizedBox(height: 8),
 
-                    // Info Harga
-                     Row(
-                      children: [
-                        const Icon(Icons.price_change_outlined, color: Colors.grey, size: 16),
-                        const SizedBox(width: 4),
-                        Text(restaurant.priceInfo, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
+                    // Row(
+                    //   children: [
+                    //     const Icon(Icons.price_change_outlined, color: Colors.grey, size: 16),
+                    //     const SizedBox(width: 4),
+                    //     Text(widget.restaurant.priceInfo, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                    //   ],
+                    // ),
 
                     const Divider(height: 32),
-                    
-                    // Galeri
+                  
                     const Text('Gallery', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      height: 80,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: restaurant.galleryImageUrls.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 10.0),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(15),
-                              child: CachedNetworkImage(
-                                imageUrl: restaurant.galleryImageUrls[index],
-                                width: 80, height: 80, fit: BoxFit.cover,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    const Divider(height: 32),
-
-                    // Tentang Restoran
+                    const SizedBox(height: 32),
                     const Text('About Restaurant', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     Text(
-                      restaurant.description,
+                      widget.restaurant.description,
                       style: TextStyle(color: Colors.grey[700], height: 1.5, fontSize: 16),
                     ),
 
-                    const SizedBox(height: 32),
+                    const Divider(height: 32),
+                                       Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Ulasan Pengguna', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        TextButton(
+                          onPressed: () {
+                            // Navigasi ke halaman baru untuk semua ulasan
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (context) => AllReviewsPage(
+                                restaurantId: widget.restaurant.id,
+                                restaurantName: widget.restaurant.name,
+                              ),
+                            ));
+                          }, 
+                          child: const Text('Lihat semua'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    FutureBuilder<List<Review>>(
+                      future: _reviewsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
+                        }
+                        if (snapshot.hasError) {
+                          return Center(child: Text('Gagal memuat ulasan: ${snapshot.error}'));
+                        }
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Text('Jadilah yang pertama memberi ulasan!'),
+                            ),
+                          );
+                        }
 
-                    // Tombol Visit
-                      SizedBox(
+                        final reviews = snapshot.data!;
+                        
+                        // --- [PERBAIKAN] Ganti ListView.builder dengan SingleChildScrollView + Row ---
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start, // Align kartu ke atas
+                            children: List.generate(min(reviews.length, 3), (index) {
+                              return SizedBox(
+                                width: screenWidth * 0.8,
+                                child: Card(
+                                  margin: const EdgeInsets.only(right: 12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: ReviewCard(review: reviews[index]),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        );
+                        // --- BATAS PERBAIKAN ---
+                      },
+                    ),
+
+
+                    const SizedBox(height: 32),
+                    SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () => _launchMapsUrl(context),
@@ -156,7 +205,7 @@ class RestaurantDetailPage extends StatelessWidget {
           
           // LAPISAN 3: APPBAR TRANSPARAN CUSTOM
           Positioned(
-            top: MediaQuery.of(context).padding.top, // Agar tidak tertutup status bar
+            top: MediaQuery.of(context).padding.top,
             left: 0,
             right: 0,
             child: Padding(
@@ -164,7 +213,6 @@ class RestaurantDetailPage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Tombol Back
                   CircleAvatar(
                     backgroundColor: Colors.black.withOpacity(0.4),
                     child: IconButton(
@@ -172,7 +220,6 @@ class RestaurantDetailPage extends StatelessWidget {
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  // Tombol Bookmark
                   CircleAvatar(
                     backgroundColor: Colors.black.withOpacity(0.4),
                     child: IconButton(
@@ -189,3 +236,4 @@ class RestaurantDetailPage extends StatelessWidget {
     );
   }
 }
+
