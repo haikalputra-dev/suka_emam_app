@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "228865824711-vekkaupjk8gcmu1c7du2v0r1kv73os97.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sukaemam.pandora",
+            "certificate_hash": "8debcffa5c11e4ac5b1e625a61430ef0b4d6f406"
+          }
+        },
+        {
           "client_id": "228865824711-7otj0c7chtq7iaf2dhl4cfqh2ugs4jci.apps.googleusercontent.com",
           "client_type": 3
         }
